@@ -5,7 +5,6 @@ namespace RestoApi.DTOs;
 public sealed record ProductResponse(
     int Id,
     int CategoryId,
-    string CategoryName,
     string Name,
     decimal Price,
     int Stock,
@@ -14,10 +13,9 @@ public sealed record ProductResponse(
     DateTime? UpdatedAt
 )
 {
-    public static ProductResponse FromModel(Product product, string categoryName = "") => new(
+    public static ProductResponse FromModel(Product product) => new(
         product.Id,
         product.CategoryId,
-        categoryName,
         product.Name,
         product.Price,
         product.Stock,
