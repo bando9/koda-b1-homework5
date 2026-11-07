@@ -1,6 +1,12 @@
-@Resto.Api_HostAddress = http://localhost:5004
+@baseUrl = http://localhost:5004
 
-GET {{Resto.Api_HostAddress}}/weatherforecast/
+GET {{baseUrl}}/weatherforecast/
 Accept: application/json
 
-###
+### Get all products
+GET {{baseUrl}}/api/v1/products/
+Accept: application/json
+
+### 
+GET {{baseUrl}}/api/v1/products/1
+Accept: application/json
