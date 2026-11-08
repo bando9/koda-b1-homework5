@@ -1,12 +1,40 @@
 @baseUrl = http://localhost:5004
 
-GET {{baseUrl}}/weatherforecast/
-Accept: application/json
-
 ### Get all products
-GET {{baseUrl}}/api/v1/products/
+GET {{baseUrl}}/api/v1/products
 Accept: application/json
 
-### 
-GET {{baseUrl}}/api/v1/products/1
+### Get by productCode
+GET {{baseUrl}}/api/v1/products/BKS-03
+Accept: application/json
+ 
+
+### Post 
+POST {{baseUrl}}/api/v1/products
+Accept: application/json
+Content-Type: application/json
+
+{
+    "categoryId": 1, 
+    "productCode": "BKS-02",
+    "name":"Bakso Rudal",
+    "price": 20000,
+    "stock":2400
+}
+
+
+### UPDATE 
+PUT {{baseUrl}}/api/v1/products/BKS-03
+Accept: application/json
+Content-Type: application/json
+
+{
+    "categoryId": 1, 
+    "name":"Bakso Telor",
+    "price": 20000,
+    "stock": 2850 
+}
+
+### Delete Product
+DELETE {{baseUrl}}/api/v1/products/BKS-02
 Accept: application/json

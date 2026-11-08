@@ -2,7 +2,6 @@
 using Resto.Api.DTOs;
 using Resto.Api.Models;
 using Resto.Api.Repositories;
-using RestoApi.DTOs;
 
 namespace Resto.Api.Services;
 
@@ -13,16 +12,9 @@ public sealed class ProductService : IProductService
     {
         _repository=repository;
     }
-    public async Task<ProductResponse?> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken)
+    public async Task<ProductResponse?> CreateAsync(ProductRequest request, CancellationToken cancellationToken)
     {
-        var product = new Product
-        {
-            CategoryId = request.CategoryId, 
-            Name = request.Name.Trim(),
-            Price = request.Price,
-            Stock = request.Stock,
-            IsActive = request.IsActive
-        };
+       var product = new Product(request.CategoryId, request.ProductCode, request.Name, request.Price, request.Stock);
 
         var created = await _repository.TryAddAsync(product, cancellationToken);
 
@@ -35,13 +27,14 @@ public sealed class ProductService : IProductService
 
     }
 
-    public Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
+    public Task<bool> DeleteAsync(string productCode, CancellationToken cancellationToken)
     {
-        if (id <= 0)
+        if (string.IsNullOrWhiteSpace(productCode
+        ) || productCode.Trim().Length > 30)
         {
             return Task.FromResult(false);
         }
-        return _repository.TryDeleteAsync(id,cancellationToken);
+        return _repository.TryDeleteAsync(productCode, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ProductResponse>> GetAllAsync(CancellationToken cancellationToken)
@@ -51,34 +44,20 @@ public sealed class ProductService : IProductService
         return products.Select(ProductResponse.FromModel).ToArray();
     }
 
-    public async Task<ProductResponse?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    public async Task<ProductResponse?> GetByCodeAsync(string productCode, CancellationToken cancellationToken)
     {
-        if (id <= 0)
+        if (string.IsNullOrWhiteSpace(productCode
+        ) || productCode.Trim().Length > 30)
         {
             return null;
         }
-
-        var product = await _repository.GetByIdAsync(id, cancellationToken);
-
+        var product = await _repository.GetByCodeAsync(productCode, cancellationToken);
         return product is null ? null : ProductResponse.FromModel(product);
-        // throw new NotImplementedException();
     }
 
-    public async Task<ProductResponse?> UpdateAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken)
+    public async Task<ProductResponse?> UpdateAsync(string productCode, UpdateProductRequest request, CancellationToken cancellationToken)
     {
-        if (id <= 0)
-        {
-            return null;
-        }
-        var product = new Product
-        {
-            Id = id,
-            CategoryId = request.CategoryId,
-            Name = request.Name.Trim(),
-            Price = request.Price,
-            Stock = request.Stock,
-            IsActive = request.IsActive
-        };
+        var product = new Product(request.CategoryId, productCode, request.Name, request.Price, request.Stock);
 
         var updated = await _repository.TryUpdateAsync(product, cancellationToken);
 

@@ -7,22 +7,19 @@ namespace Resto.Api.Repositories;
 public class SqlProductRepository : IProductRepository
 {
     private readonly string _connectionString;
-    private readonly ILogger<SqlProductRepository> _logger;
     
 
-    public SqlProductRepository(IConfiguration configuration, ILogger<SqlProductRepository> logger)
+    public SqlProductRepository(IConfiguration configuration)
     {
-        _connectionString=configuration.GetConnectionString("resto_db") ?? throw new InvalidOperationException("Connection string tidak ditemukan di appsettings.");
-        _logger=logger;
+        _connectionString=configuration.GetConnectionString("restodb") ?? throw new InvalidOperationException("Connection string tidak ditemukan di appsettings.");
+        
     }
 
     public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT p.Id, p.CategoryId, c.Name as CategoryName, p.Name, p.Price, p.Stock, p.IsActive, p.CreatedAt, p.UpdatedAt
-            FROM dbo.Product AS p
-            JOIN dbo.Category As c ON c.Id = p.CategoryId
-            ORDER BY p.Id DESC;
+            SELECT Id, CategoryId, ProductCode, Name, Price, Stock, IsActive
+            FROM dbo.Product
         """;
 
         var products = new List<Product>();
@@ -42,15 +39,10 @@ public class SqlProductRepository : IProductRepository
         return products;
     }
 
-    public async Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Product?> GetByCodeAsync(string productCode, CancellationToken cancellationToken)
     {
-
         const string sql = """
-            SELECT 
-                p.Id, p.CategoryId, c.Name as CategoryName, p.Name, p.Price, p.Stock, p.IsActive, p.CreatedAt, p.UpdatedAt
-            FROM dbo.Product AS p
-            JOIN dbo.Category As c ON c.Id = p.CategoryId
-            WHERE p.Id = @id;
+        SELECT Id, CategoryId, ProductCode, Name, Price, Stock, IsActive FROM dbo.Product WHERE ProductCode = @productCode;
         """;
 
         await using var connection = new SqlConnection(_connectionString);
@@ -59,11 +51,11 @@ public class SqlProductRepository : IProductRepository
 
         await using var command = new SqlCommand(sql, connection);
 
-        AddId(command, id);
+        AddProductCode(command, productCode);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
-        if(!await reader.ReadAsync(cancellationToken))
+        if (!await reader.ReadAsync(cancellationToken))
         {
             return null;
         }
@@ -73,8 +65,8 @@ public class SqlProductRepository : IProductRepository
     public async Task<bool> TryAddAsync(Product product, CancellationToken cancellationToken)
     {
         const string sql = """
-            INSERT INTO dbo.Product(CategoryId,Name, Price, Stock, IsActive) VALUES
-            (@categoryId, @name, @price, @stock, @isActive);
+            INSERT INTO dbo.Product (CategoryId, ProductCode, Name, Price, Stock)
+            VALUES (@categoryId, @productCode, @name, @price, @stock);
         """;
 
         await using var connection = new SqlConnection(_connectionString);
@@ -97,15 +89,15 @@ public class SqlProductRepository : IProductRepository
         }
         catch (SqlException e)
         {
-            System.Console.WriteLine("SQL Error tidak terduga saat menambah produk: {Number}", e.Number);
+            System.Console.WriteLine($"SQL Error tidak terduga saat menambah produk: {e.Number}", e.Number);
             return false;
         }
     }
 
-    public async Task<bool> TryDeleteAsync(int id, CancellationToken cancellationToken)
+    public async Task<bool> TryDeleteAsync(string productCode, CancellationToken cancellationToken)
     {
         const string sql = """
-            DELETE FROM dbo.Product WHERE Id = @id;
+            DELETE FROM dbo.Product WHERE ProductCode = @productCode;
         """;
 
         await using var connection = new SqlConnection(_connectionString);
@@ -114,7 +106,7 @@ public class SqlProductRepository : IProductRepository
 
         await using var command = new SqlCommand(sql, connection);
 
-        AddId(command, id);
+        AddProductCode(command, productCode);
         
         var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -130,10 +122,8 @@ public class SqlProductRepository : IProductRepository
                 CategoryId = @categoryId,
                 Name = @name,
                 Price = @price,
-                Stock = @stock,
-                IsActive = @isActive,
-                UpdatedAt = GETDATE()
-            WHERE Id = @id;
+                Stock = @stock
+            WHERE ProductCode = @productCode;
             """;
 
         await using var connection = new SqlConnection(_connectionString);
@@ -156,13 +146,13 @@ public class SqlProductRepository : IProductRepository
 
     private void AddProductParameters(SqlCommand command, Product product)
     {
+        AddProductCode(command, product.ProductCode);
+
         command.Parameters.Add("@categoryId", SqlDbType.Int).Value = product.CategoryId;
 
         command.Parameters.Add("@name", SqlDbType.NVarChar, 100).Value = product.Name;
 
         command.Parameters.Add("@stock", SqlDbType.Int).Value = product.Stock;
-
-        command.Parameters.Add("@isActive", SqlDbType.Bit).Value = product.IsActive;
 
         var price = command.Parameters.Add("@price", SqlDbType.Decimal);
         price.Precision = 18;
@@ -170,23 +160,20 @@ public class SqlProductRepository : IProductRepository
         price.Value = product.Price;
     }
 
-    private static void AddId(SqlCommand command, int id)
+    private static void AddProductCode(SqlCommand command, string productCode)
     {
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        command.Parameters.Add("@productCode", SqlDbType.NVarChar, 30).Value = productCode.Trim().ToUpperInvariant();
     }
 
     private static Product ReadProduct(SqlDataReader reader)
     {
-        return new Product
-        {
-            Id = reader.GetInt32(0),
-        CategoryId = reader.GetInt32(1),
-        Name = reader.GetString(2),
-        Price = reader.GetDecimal(3),
-        Stock = reader.GetInt32(4),
-        IsActive = reader.GetBoolean(5),
-        CreatedAt = reader.GetDateTime(6),
-        UpdatedAt = reader.IsDBNull(7) ? null : reader.GetDateTime(7)
-        };
+        return new Product(
+            reader.GetInt32(1),
+            reader.GetString(2),
+            reader.GetString(3),
+            reader.GetDecimal(4),
+            reader.GetInt32(5)
+        );
+        
     }
 }

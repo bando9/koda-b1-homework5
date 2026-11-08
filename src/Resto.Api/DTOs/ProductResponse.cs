@@ -1,26 +1,20 @@
 using Resto.Api.Models;
 
-namespace RestoApi.DTOs;
+namespace Resto.Api.DTOs;
 
 public sealed record ProductResponse(
-    int Id,
     int CategoryId,
+    string ProductCode,
     string Name,
     decimal Price,
-    int Stock,
-    bool IsActive,
-    DateTime CreatedAt,
-    DateTime? UpdatedAt
+    int Stock
 )
 {
     public static ProductResponse FromModel(Product product) => new(
-        product.Id,
         product.CategoryId,
+        product.ProductCode,
         product.Name,
         product.Price,
-        product.Stock,
-        product.IsActive,
-        product.CreatedAt,
-        product.UpdatedAt
+        product.Stock
     );
 }

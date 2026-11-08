@@ -1,14 +1,13 @@
 using Resto.Api.DTOs;
-using RestoApi.DTOs;
 
 namespace Resto.Api.Services;
 
 public interface IProductService
 {
     Task<IReadOnlyList<ProductResponse>> GetAllAsync(CancellationToken cancellationToken);
-    Task<ProductResponse?> GetByIdAsync(int id, CancellationToken cancellationToken);
-    Task<ProductResponse?> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken);
-    Task<ProductResponse?> UpdateAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken);
+    Task<ProductResponse?> GetByCodeAsync(string productCode, CancellationToken cancellationToken);
+    Task<ProductResponse?> CreateAsync(ProductRequest request, CancellationToken cancellationToken);
+    Task<ProductResponse?> UpdateAsync(string productCode, UpdateProductRequest request, CancellationToken cancellationToken);
 
-    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(string productCode, CancellationToken cancellationToken);
 }

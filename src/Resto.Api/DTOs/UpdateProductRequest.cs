@@ -17,8 +17,5 @@ public record UpdateProductRequest(
 
     [Required]
     [Range(0, int.MaxValue, ErrorMessage = "Stok tidak boleh negatif.")]
-    int Stock,
-
-    [Required]
-    bool IsActive
+    int Stock
 );
